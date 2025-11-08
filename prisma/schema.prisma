@@ -4,13 +4,14 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" // 或者 "postgresql", "mysql" 等
-  url      = env("DATABASE_URL") // <-- 必须有这一行！
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 // Message 表
 model Message {
   id        Int      @id @default(autoincrement())
   text      String
+  author    String?
   createdAt DateTime @default(now())
 }

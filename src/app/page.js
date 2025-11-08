@@ -20,13 +20,18 @@ export default async function HomePage() {
       <hr style={{ margin: '24px 0' }} />
 
       <h2>留言区（表单示例）</h2>
-      <form action={submitMessage}>
+      <form action={submitMessage} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <input
+          name="author"
+          placeholder="昵称"
+          style={{ padding: 8, width: 100 }}
+        />
         <input
           name="message"
           placeholder="请输入留言"
           style={{ padding: 8, width: 240 }}
         />
-        <button type="submit" style={{ marginLeft: 8 }}>提交</button>
+        <button type="submit">提交</button>
       </form>
 
       {/* 留言显示 */}
@@ -36,7 +41,7 @@ export default async function HomePage() {
         ) : (
           messages.map(m => (
             <li key={m.id} style={{ marginBottom: 8 }}>
-              🗨️ {m.text}
+              <strong>{m.author || '匿名'}</strong>：🗨️ {m.text}
               <small style={{ color: '#666' }}>（{new Date(m.createdAt).toLocaleString()}）</small>
             </li>
           ))
@@ -49,6 +54,7 @@ export default async function HomePage() {
 
 async function fetchMessages() {
   return prisma.message.findMany({
+    take: 2,
     orderBy: { id: 'desc' },
   })
 }
@@ -57,8 +63,9 @@ async function fetchMessages() {
 export async function submitMessage(formData) {
   'use server'
   const text = formData.get('message')
+  const author = formData.get('author')
   if (!text) return
-  await prisma.message.create({ data: { text } })
-  console.log('💬 写入数据库留言：', text)
+  await prisma.message.create({ data: { text, author } })
+  console.log('💬 写入数据库留言：', { author, text })
   revalidatePath('/')
 }
