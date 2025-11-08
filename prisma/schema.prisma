@@ -1,0 +1,16 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // 或者 "postgresql", "mysql" 等
+  url      = env("DATABASE_URL") // <-- 必须有这一行！
+}
+
+// Message 表
+model Message {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+}

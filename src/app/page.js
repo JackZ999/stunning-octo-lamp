@@ -1,66 +1,64 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import PostList from './components/PostList.jsx'
+import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
+import { PrismaClient } from '@prisma/client'
 
-export default function Home() {
+const prisma = new PrismaClient()
+
+// Server Component ：在服务器端执行
+export default async function HomePage() {
+
+  const posts = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=3')
+    .then(r => r.json())
+  const messages = await fetchMessages()
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main style={{ padding: 24 }}>
+      <h1>首页（含 Server + Client 组合）</h1>
+      <PostList posts={posts} />
+
+      <hr style={{ margin: '24px 0' }} />
+
+      <h2>留言区（表单示例）</h2>
+      <form action={submitMessage}>
+        <input
+          name="message"
+          placeholder="请输入留言"
+          style={{ padding: 8, width: 240 }}
         />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.js file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+        <button type="submit" style={{ marginLeft: 8 }}>提交</button>
+      </form>
+
+      {/* 留言显示 */}
+      <ul style={{ marginTop: 16 }}>
+        {messages.length === 0 ? (
+          <p>暂无留言</p>
+        ) : (
+          messages.map(m => (
+            <li key={m.id} style={{ marginBottom: 8 }}>
+              🗨️ {m.text}
+              <small style={{ color: '#666' }}>（{new Date(m.createdAt).toLocaleString()}）</small>
+            </li>
+          ))
+        )}
+      </ul>
+
+    </main>
+  )
+}
+
+async function fetchMessages() {
+  return prisma.message.findMany({
+    orderBy: { id: 'desc' },
+  })
+}
+
+
+export async function submitMessage(formData) {
+  'use server'
+  const text = formData.get('message')
+  if (!text) return
+  await prisma.message.create({ data: { text } })
+  console.log('💬 写入数据库留言：', text)
+  revalidatePath('/')
 }
